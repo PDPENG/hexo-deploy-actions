@@ -1,0 +1,84 @@
+name: AutoDeploy
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  GIT_USER: PDPENG
+  GIT_EMAIL: jason.peng.code@gmail.com
+  GIT_DEPLOY_REPO: PDPENG/pdpeng.github.io
+  GIT_DEPLOY_BRANCH: master
+
+  GITEE_USER: Coder-Jason
+  GITEE_DEPLOY_REPO: Coder-Jason/Coder-Jason
+  GITEE_DEPLOY_BRANCH: master
+  
+  GIT_SOURCE_REPO: git@github.com:PDPENG/pdpeng.github.io.git
+  GITEE_DESTINATION_REPO: git@gitee.com:Coder-Jason/Coder-Jason.git
+
+jobs:
+  build:
+    name: Build on node ${{ matrix.node_version }} and ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node_version: [16.x]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Checkout deploy repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.GIT_DEPLOY_REPO }}
+          ref: ${{ env.GIT_DEPLOY_BRANCH }}
+          path: .deploy_git
+
+      - name: Use Node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node_version }}
+
+      - name: Configuration environment
+        env:
+          HEXO_DEPLOY_PRI: ${{secrets.HEXO_DEPLOY_PRI}}
+        run: |
+          sudo timedatectl set-timezone "Asia/Shanghai"
+          mkdir -p ~/.ssh/
+          echo "$HEXO_DEPLOY_PRI" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa gitee.com >> ~/.ssh/known_hosts
+          git config --global user.name $GIT_USER
+          git config --global user.email $GIT_EMAIL
+
+      - name: Install dependencies
+        run: |
+          npm install hexo-cli -g
+          npm install - gulp gulp-uglify hexo hexo-deployer-git hexo-generator-archive hexo-generator-category hexo-generator-feed hexo-generator-index hexo-generator-search hexo-generator-searchdb hexo-generator-sitemap hexo-generator-tag hexo-leancloud-counter-security hexo-renderer-ejs hexo-renderer-marked hexo-renderer-pug hexo-renderer-stylus hexo-server hexo-tag-cloud hexo-word-counter readable-stream uglify-es --save
+
+      - name: Deploy hexo
+        run: |
+          npm run deploy
+
+      - name: Sync to Gitee
+        uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HEXO_DEPLOY_PRI }}
+        with:
+          source-repo: ${{ env.GIT_SOURCE_REPO }}
+          destination-repo: ${{ env.GITEE_DESTINATION_REPO }}
+
+      - name: Build Gitee Pages
+        uses: yanglbme/gitee-pages-action@main
+        with:
+          gitee-username: ${{ env.GITEE_USER }}
+          gitee-password: ${{ secrets.GITEE_PASSWORD }}
+          gitee-repo: ${{ env.GITEE_DEPLOY_REPO }}
+          branch: ${{ env.GITEE_DEPLOY_BRANCH }}
