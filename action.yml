@@ -1,0 +1,51 @@
+name: Hexo Deploy Sync Gitee
+description: 'An action for hexo and sync gitee'
+author: Jason Peng <jason.peng.code@gmail.com>
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  GIT_USER: 
+    description: 'Github username'
+    required: true
+  GIT_EMAIL: 
+    description: 'Github user e-mail'
+    required: true
+  GIT_DEPLOY_REPO: 
+    description: 'Github warehouse to be deployed after hexo compiles'
+    required: true
+  GIT_DEPLOY_BRANCH: ''
+    description: 'Hexo the branch to deploy to after compilation'
+    required: true
+
+  GITEE_USER: 
+    description: 'After hexo compiles use this gitee user to deploy to the gitee warehouse'
+    required: true
+  GITEE_DEPLOY_REPO: 
+    description: 'The gitee warehouse to be deployed after hexo compiles'
+    required: true
+  GITEE_DEPLOY_BRANCH: master
+    description: 'Hexo compiles the branch to deploy after compilation'
+    required: true
+    default: 'master'
+
+  GIT_SOURCE_REPO: 
+    description: 'Your github source warehouse address'
+    required: true
+  GITEE_DESTINATION_REPO: 
+    description: 'Your gitee source warehouse address'
+    required: true
+
+  Install dependencies:
+    description: 'Install your dependencies'
+    required: true
+
+  Secrets: 
+    description: 'HEXO_DEPLOY_PRI and GITEE_PASSWORD, configure in Repository Secrets'
+    required: true
+    default: ''
+
+runs:
+  using: 'node16'
+  main: 'main/action.yml'
